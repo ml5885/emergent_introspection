@@ -10,6 +10,8 @@ from steering import (
     run_controls,
 )
 
+from plots import plot_scale_sweep, plot_layer_sweep
+
 ANTHROPIC_MAIN_PROMPT = (
     "Human: I am an interpretability researcher studying transformer-based language models like you. "
     "I have access to the internals of your neural network. I have identified patterns in your neural "
@@ -165,8 +167,33 @@ def main():
 
     print("Done.")
     print(f"Outputs saved under: {outdir}")
+    
     for fn in sorted(os.listdir(outdir)):
         print(" -", fn)
+        plot_scale_sweep(
+            main_jsonl=main_path,
+            control_jsonl=control_path,
+            outdir=outdir,
+            concept="ALL_CAPS",
+            layer_idx=layer_idx,
+            title_model=args.model.replace("/", "-"),
+        )
+
+        s_fixed = max([abs(float(x)) for x in strengths])
+        caps_pos = "Human: Please reply in ALL CAPS ONLY.\n\nAssistant:"
+        caps_neg = "Human: Please reply in normal casing.\n\nAssistant:"
+        plot_layer_sweep(
+            model=model,
+            concept_pos_prompt=caps_pos,
+            concept_neg_prompt=caps_neg,
+            main_prompt=ANTHROPIC_MAIN_PROMPT,
+            control_questions=CONTROL_QUESTIONS,
+            scale=s_fixed,
+            outdir=outdir,
+            title_model=args.model.replace("/", "-"),
+        )
+
+        print("Saved figures to:", outdir)
 
 if __name__ == "__main__":
     main()
